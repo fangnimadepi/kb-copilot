@@ -19,6 +19,9 @@ venv/
 .vscode/
 .claude/
 
+# --- 第三方参考源码（仅本地精读） ---
+reference/
+
 # --- 数据与模型 ---
 data/uploads/
 data/corpus/
