@@ -1,0 +1,33 @@
+# --- 私人计划文档（不进仓库） ---
+plan.md
+项目实施手册.md
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.python-version
+
+# --- 环境与密钥 ---
+.env
+*.local
+
+# --- IDE ---
+.idea/
+.vscode/
+.claude/
+
+# --- 数据与模型 ---
+data/uploads/
+data/corpus/
+*.log
+
+# --- 测试与构建 ---
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+dist/
+build/

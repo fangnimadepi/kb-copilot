@@ -1,0 +1,38 @@
+# 基础设施（开发期先起 mysql/redis/milvus；api/worker 服务在 M5 阶段补全）
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: kb_copilot
+      MYSQL_USER: kbcopilot
+      MYSQL_PASSWORD: change-me
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # Milvus standalone（含内置 etcd/minio 的精简部署，M2 阶段启用）
+  # 参考 https://milvus.io/docs/install_standalone-docker-compose.md
+  milvus:
+    image: milvusdb/milvus:v2.4-latest
+    profiles: ["milvus"]
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_USE_EMBED: "true"
+      COMMON_STORAGETYPE: local
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus_data:/var/lib/milvus
+
+volumes:
+  mysql_data:
+  milvus_data:

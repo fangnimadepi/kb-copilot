@@ -1,0 +1,30 @@
+[project]
+name = "kb-copilot"
+version = "0.1.0"
+description = "企业级知识库问答平台：FastAPI + 自研 RAG 链路 + 两阶段检索 + Ragas 评测闭环"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic-settings>=2.4",
+    "sse-starlette>=2.1",
+    "openai>=1.40",          # DeepSeek 兼容 OpenAI SDK
+    "tiktoken>=0.7",
+    "sqlalchemy>=2.0",
+    "pymysql>=1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+    "ruff>=0.6",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
