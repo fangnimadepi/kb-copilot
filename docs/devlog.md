@@ -19,6 +19,8 @@
 - 阿里云镜像仓库的 chatchat tag 已失效，改用 Docker Hub 的 chatimage/chatchat:0.3.1.3-717e03e-20241109
 - chatchat 的 kb_chat 非流式响应是"JSON 字符串再编码一层"，客户端要 json.loads 两次——自己写 API 时要避免这种坑
 - Web UI 新建知识库选 milvus 类型时"点击无反应"：镜像里没装 pymilvus，后端 500 且响应非 JSON，前端静默吞错。教训（自己项目要做对）：① 异常要统一转结构化 JSON 错误响应；② 前端必须对失败态给出明确提示。参照物用 faiss 即可
+- pptx 入库失败：缺 python-pptx 依赖（容器内 pip install 解决）。看清了 Chatchat 的 OCR 方案：调用开源 RapidOCR（onnxruntime），自己只写 Loader 封装（RapidOCRPDFLoader = PyMuPDF 抽文本 + 图片 OCR；RapidOCRPPTLoader = python-pptx 遍历 + 图片 OCR）。启发：文档解析选型"成熟库 + 自封装"即可，OCR 不必自研
+- 英文 PDF"检索有匹配但 LLM 拒答"完整归因：top_k=3 召回的片段都来自实验章节，不含问题答案（定义在摘要）；RAG prompt 限定"仅据已知信息回答"→ 拒答（防幻觉行为正确，是召回质量问题）。**读源码发现 Chatchat 0.3.1.3 的 rerank 代码整段被注释——实际只有单阶段向量召回**。这就是自己项目要做两阶段检索（召回 top20 + reranker 精排 top5）的最直接论据；top_k 调大能缓解但拉长上下文/延迟（trade-off 面试考点）
 
 **明天**
 - Web UI（localhost:8501）走一遍上传 PDF + 问答的完整体验
