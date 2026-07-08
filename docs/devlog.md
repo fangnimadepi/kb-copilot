@@ -18,6 +18,7 @@
 - 私人计划文档通过 .gitignore 排除在仓库外；真实 API key 只放 .env（.env.example 一律占位符）
 - 阿里云镜像仓库的 chatchat tag 已失效，改用 Docker Hub 的 chatimage/chatchat:0.3.1.3-717e03e-20241109
 - chatchat 的 kb_chat 非流式响应是"JSON 字符串再编码一层"，客户端要 json.loads 两次——自己写 API 时要避免这种坑
+- Web UI 新建知识库选 milvus 类型时"点击无反应"：镜像里没装 pymilvus，后端 500 且响应非 JSON，前端静默吞错。教训（自己项目要做对）：① 异常要统一转结构化 JSON 错误响应；② 前端必须对失败态给出明确提示。参照物用 faiss 即可
 
 **明天**
 - Web UI（localhost:8501）走一遍上传 PDF + 问答的完整体验
