@@ -9,10 +9,17 @@
 - 建仓库骨架：FastAPI 分层结构（api/services/models/core/tasks）、pyproject、.env 模板、README（架构图 + roadmap）
 - 明确相对 Java 版的升级点：LangChain4j 黑盒链路 → 手写 RAG 链路；单阶段向量检索 → 召回+rerank 两阶段；Spring @Async → Celery 任务状态机；新增 Ragas 评测闭环
 
+- 仓库推送 GitHub（fangnimadepi/kb-copilot），配好凭据
+- 跑通参照物 Langchain-Chatchat（Docker）：不用官方捆绑 Xinference 的重方案，改为只跑 chatchat 容器 + 在线 API——LLM 用 DeepSeek、Embedding 用硅基流动 bge-m3；改 model_settings.yaml 的 MODEL_PLATFORMS（platform_type: openai 接任意兼容端点）后重启生效
+- API 层面完整验证：/chat/chat/completions（LLM 直连）、创建知识库、upload_docs 向量化、search_docs 检索、/chat/kb_chat 端到端 RAG 问答全部通过
+
 **踩坑 / 决策**
 - Windows 本地开发：Celery 官方不支持 Windows、Milvus 只有 Docker 发行版 → 决定基础设施全部走 Docker Compose，Python 代码本地跑
-- 私人计划文档通过 .gitignore 排除在仓库外
+- 私人计划文档通过 .gitignore 排除在仓库外；真实 API key 只放 .env（.env.example 一律占位符）
+- 阿里云镜像仓库的 chatchat tag 已失效，改用 Docker Hub 的 chatimage/chatchat:0.3.1.3-717e03e-20241109
+- chatchat 的 kb_chat 非流式响应是"JSON 字符串再编码一层"，客户端要 json.loads 两次——自己写 API 时要避免这种坑
 
 **明天**
-- 跑通 Langchain-Chatchat 参照物，精读其分块 / 检索链路 / 路由组织
+- Web UI（localhost:8501）走一遍上传 PDF + 问答的完整体验
+- 精读 Chatchat 三处源码：ChineseRecursiveTextSplitter 分块 / kb_chat 检索链路 / FastAPI 路由组织
 - 选定语料（某开源产品官方文档 PDF 30~50 份）
