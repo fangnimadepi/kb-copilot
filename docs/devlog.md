@@ -22,7 +22,11 @@
 - pptx 入库失败：缺 python-pptx 依赖（容器内 pip install 解决）。看清了 Chatchat 的 OCR 方案：调用开源 RapidOCR（onnxruntime），自己只写 Loader 封装（RapidOCRPDFLoader = PyMuPDF 抽文本 + 图片 OCR；RapidOCRPPTLoader = python-pptx 遍历 + 图片 OCR）。启发：文档解析选型"成熟库 + 自封装"即可，OCR 不必自研
 - 英文 PDF"检索有匹配但 LLM 拒答"完整归因：top_k=3 召回的片段都来自实验章节，不含问题答案（定义在摘要）；RAG prompt 限定"仅据已知信息回答"→ 拒答（防幻觉行为正确，是召回质量问题）。**读源码发现 Chatchat 0.3.1.3 的 rerank 代码整段被注释——实际只有单阶段向量召回**。这就是自己项目要做两阶段检索（召回 top20 + reranker 精排 top5）的最直接论据；top_k 调大能缓解但拉长上下文/延迟（trade-off 面试考点）
 
+**语料选型（阶段 0 收尾）**
+- 场景定为"贵州茅台投研知识库"：从巨潮资讯抓取 2020~2025 财年年报 6 份 + 半年报 5 份，共 11 份中文完整版 PDF（data/corpus/，不进仓库）
+- 选型理由：对标金融 JD；年报表格密度高（三大报表/股东/薪酬），支撑"表格解析 + 页码溯源"卖点；评测题可设计跨年度对比、表格内数字、否定式三类刁钻问题
+- 后续可扩展：加五粮液/泸州老窖做跨公司对比；加交易所监管规则做合规问答；转 1~2 份为 docx、加几份 markdown 凑齐三格式解析演示
+
 **明天**
-- Web UI（localhost:8501）走一遍上传 PDF + 问答的完整体验
-- 精读 Chatchat 三处源码：ChineseRecursiveTextSplitter 分块 / kb_chat 检索链路 / FastAPI 路由组织
-- 选定语料（某开源产品官方文档 PDF 30~50 份）
+- 精读 Chatchat 三处源码：ChineseRecursiveTextSplitter 分块 / kb_chat 检索链路 / FastAPI 路由组织（已拉到 reference/，读完记笔记）
+- 进入阶段 1：FastAPI 骨架 + SSE 流式对话
