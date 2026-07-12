@@ -12,7 +12,14 @@ dependencies = [
     "tiktoken>=0.7",
     "sqlalchemy>=2.0",
     "aiomysql>=0.2",
+    "pymysql>=1.1",        # Celery worker 侧走同步 SQLAlchemy
     "cryptography>=42.0",  # MySQL 8 caching_sha2_password 认证需要
+    "celery>=5.4",
+    "redis>=5.0",
+    "pymilvus>=2.4",
+    "pymupdf>=1.24",
+    "python-docx>=1.1",
+    "python-multipart>=0.0.9",  # FastAPI 文件上传
 ]
 
 [project.optional-dependencies]

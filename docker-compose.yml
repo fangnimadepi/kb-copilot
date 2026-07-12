@@ -18,20 +18,30 @@ services:
     ports:
       - "6379:6379"
 
-  # Milvus standalone（含内置 etcd/minio 的精简部署，M2 阶段启用）
-  # 参考 https://milvus.io/docs/install_standalone-docker-compose.md
+  # Milvus standalone 单容器方案（内嵌 etcd + 本地存储，无需独立 etcd/minio）
+  # 参考官方 standalone_embed.sh
   milvus:
-    image: milvusdb/milvus:v2.4-latest
-    profiles: ["milvus"]
+    image: milvusdb/milvus:v2.4.15
     command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
     environment:
       ETCD_USE_EMBED: "true"
+      ETCD_DATA_DIR: /var/lib/milvus/etcd
+      ETCD_CONFIG_PATH: /milvus/configs/embedEtcd.yaml
       COMMON_STORAGETYPE: local
     ports:
       - "19530:19530"
       - "9091:9091"
     volumes:
       - milvus_data:/var/lib/milvus
+      - ./infra/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
 
 volumes:
   mysql_data:
