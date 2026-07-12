@@ -28,6 +28,10 @@ data/uploads/
 data/corpus/
 *.log
 
+# --- 评测原始结果（含全量回答与上下文，体积大；只提交汇总） ---
+results/*
+!results/summary.json
+
 # --- 测试与构建 ---
 .pytest_cache/
 .ruff_cache/

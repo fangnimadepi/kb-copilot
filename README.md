@@ -44,12 +44,24 @@ flowchart LR
 - [x] M1：FastAPI 骨架 + SSE 流式多轮对话（会话管理、上下文裁剪）
 - [x] M2：文档异步入库流水线（解析 → 分块 → 向量化，任务可查询/重试/取消）
 - [x] M3：两阶段检索 + 引用溯源（文件名 + 页码定位）+ 无答案兜底
-- [ ] M4：Ragas 评测闭环（分块策略 / rerank / top_k 三组对照实验）
+- [x] M4：Ragas 评测闭环（分块策略 / rerank / top_k 三组对照实验）
 - [ ] M5：Docker Compose 一键部署 + 线上 Demo + CI
 
 ## 评测报告
 
-*（M4 完成后填入：faithfulness / answer_relevancy / context_recall / context_precision 对照实验表格与结论）*
+评测集：100 条 QA（11 份贵州茅台年报/半年报语料，85% 数字/表格类事实题，人工抽查修正）；Ragas 四指标 + 三组对照实验（[完整报告](docs/eval-report.md)）。
+
+| 配置 | faithfulness | answer_relevancy | context_recall | context_precision | P95 |
+|---|---|---|---|---|---|
+| 纯向量 top5 | 0.30 | 0.29 | 0.26 | 0.19 | 1.66s |
+| **+ rerank top5（默认）** | 0.35 | 0.34 | **0.36** | 0.27 | 1.91s |
+| + rerank top10 | 0.39 | 0.42 | 0.33 | 0.24 | 2.00s |
+
+三组实验核心结论：
+
+1. **rerank 全面有效**：context_recall +38%（0.26→0.36）、context_precision +42%（0.19→0.27），代价仅 P95 +0.25s
+2. **top_k 是召回/精度/成本三方 trade-off**：top5 召回最高，定为默认
+3. **structured 分块反直觉地弱于 fixed**（recall 0.29 vs 0.36）——评测集由 fixed 分块反向生成存在亲和性偏差，已在报告中如实记录（做实验 ≠ 只报好消息）
 
 ## 快速开始
 

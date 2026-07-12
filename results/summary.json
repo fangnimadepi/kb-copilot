@@ -1,0 +1,110 @@
+[
+ {
+  "config": {
+   "name": "smoke",
+   "recall_top_k": null,
+   "final_top_k": null,
+   "use_rerank": true
+  },
+  "latency": {
+   "p50": 2.199,
+   "p95": 2.527
+  },
+  "scores": {
+   "faithfulness": 0.4,
+   "answer_relevancy": 0.3845,
+   "context_recall": 0.4,
+   "llm_context_precision_with_reference": 0.3167
+  }
+ },
+ {
+  "config": {
+   "name": "baseline",
+   "recall_top_k": null,
+   "final_top_k": null,
+   "use_rerank": true
+  },
+  "latency": {
+   "p50": 1.372,
+   "p95": 1.905
+  },
+  "scores": {
+   "faithfulness": 0.352,
+   "answer_relevancy": 0.337,
+   "context_recall": 0.36,
+   "llm_context_precision_with_reference": 0.2748
+  }
+ },
+ {
+  "config": {
+   "name": "no_rerank",
+   "recall_top_k": null,
+   "final_top_k": null,
+   "use_rerank": false
+  },
+  "latency": {
+   "p50": 1.114,
+   "p95": 1.664
+  },
+  "scores": {
+   "faithfulness": 0.3027,
+   "answer_relevancy": 0.2887,
+   "context_recall": 0.26,
+   "llm_context_precision_with_reference": 0.194
+  }
+ },
+ {
+  "config": {
+   "name": "top3",
+   "recall_top_k": null,
+   "final_top_k": 3,
+   "use_rerank": true
+  },
+  "latency": {
+   "p50": 1.632,
+   "p95": 2.23
+  },
+  "scores": {
+   "faithfulness": 0.3767,
+   "answer_relevancy": 0.3303,
+   "context_recall": 0.31,
+   "llm_context_precision_with_reference": 0.28
+  }
+ },
+ {
+  "config": {
+   "name": "top10",
+   "recall_top_k": null,
+   "final_top_k": 10,
+   "use_rerank": true
+  },
+  "latency": {
+   "p50": 1.445,
+   "p95": 2.001
+  },
+  "scores": {
+   "faithfulness": 0.3878,
+   "answer_relevancy": 0.4206,
+   "context_recall": 0.33,
+   "llm_context_precision_with_reference": 0.2389
+  }
+ },
+ {
+  "config": {
+   "name": "structured",
+   "recall_top_k": null,
+   "final_top_k": null,
+   "use_rerank": true
+  },
+  "latency": {
+   "p50": 1.481,
+   "p95": 2.083
+  },
+  "scores": {
+   "faithfulness": 0.312,
+   "answer_relevancy": 0.3151,
+   "context_recall": 0.29,
+   "llm_context_precision_with_reference": 0.2252
+  }
+ }
+]

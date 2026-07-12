@@ -2,6 +2,27 @@
 
 > 每天记录：做了什么 / 踩了什么坑 / 做了什么决策。
 
+## 2026-07-12（Day 2 · 阶段 4 完成）★ 全项目最值钱的一天
+
+**做了什么**
+- 评测集：4519 chunk 分层抽样（每文档均分名额、表格块占 1/3）→ DeepSeek 反向出题（自包含性约束 + skip 规则）→ 100 条 QA；人工抽查 30 条修正 3 条（数字取错单元格 / 缺"母公司口径"限定 / 负号列示歧义）
+- 评测管线：run_eval.py（直调内部链路、可注入配置、并发 6、记 P50/P95）+ run_ragas.py（judge=DeepSeek、embedding=bge-m3）
+- 三组对照实验 × 100 题跑完（结果见 docs/eval-report.md），最终默认配置：fixed + rerank top5
+
+**核心数字（简历素材）**
+- rerank：context_recall 0.26→0.36（+38%），context_precision 0.19→0.27（+42%），P95 代价 +0.25s
+- top_k：top5 召回最优的均衡点；端到端 P50 1.37s / P95 1.91s
+- structured 分块反直觉地弱于 fixed（recall 0.29 vs 0.36）——评测集由 fixed chunk 反向生成，存在亲和性偏差；如实写进报告
+
+**踩坑**
+- ragas 0.4.3 与 langchain-community 0.4 不兼容（import vertexai 报错）→ 锁 langchain-community<0.4
+- DeepSeek 不支持 OpenAI 的 n>1 采样 → AnswerRelevancy(strictness=1)
+- structured 分块静默失效（见 fix commit）：PDF 每页一 unit、标题埋页中，节检测只看 unit 首行 → 整书一个大节回落 fixed，产物逐字节相同。靠 chunk 计数对照发现。**教训：对照实验先验证变量真的变了**
+- 权限分类服务中断期间用只读工具核对了 ragas API 兼容性——阻塞时先做能做的
+
+**下一步（阶段 5：工程化收尾）**
+- docker compose 补 api/worker 服务、部署云服务器、README 快速启动、CI（lint + 单测）
+
 ## 2026-07-12（Day 2 · 阶段 3 完成）
 
 **做了什么**
