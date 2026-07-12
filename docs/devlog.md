@@ -17,6 +17,7 @@
 - 数据一致性：单文档 MySQL 358 chunk = Milvus 358 向量，页码范围与 PDF 实际页数吻合 ✅
 
 **踩坑 / 决策**
+- **本阶段最大发现：Celery + Redis 的 acks_late 崩溃重投不是即时的**。杀 worker 后在途消息躺在 Redis unacked 集合，要等 visibility_timeout（默认 1 小时！）超时才被回收重投，且回收检查主要发生在 worker 启动时。实测：一个任务卡"parsing"状态 20 分钟，队列已空——就是这个机制。修复：visibility_timeout 调到 600s（必须 > 单任务最长时长，否则运行中任务被误判超时导致重复投递；幂等设计是最后防线）。RabbitMQ 是断连即重投，没有这个问题——这是 broker 选型的真实差异点
 - PowerShell multipart 客户端把中文文件名编码成 RFC 2047（=?utf-8?B?...?=），内含 Windows 非法字符 `?`，落盘 OSError——教训：**服务端永远不能信任客户端文件名**，统一解码（email.header）+ 清洗非法字符 + 去路径分量防目录穿越
 - acks_late 崩溃重投的前提是任务幂等：任务开头先删同文档旧 chunk/向量再写入
 - Celery 取消没有安全的强杀手段，采用协作式取消：embedding 批间回查状态位；worker 侧读取消标记要 expire_all() 绕过 Session 缓存
