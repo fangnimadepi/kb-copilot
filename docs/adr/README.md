@@ -8,6 +8,7 @@
 |---|---|---|
 | [ADR-001](001-handwritten-rag-chain.md) | 手写 RAG 链路而非全用 LangChain | 已采纳 |
 | [ADR-002](002-sse-over-websocket.md) | 流式输出用 SSE 而非 WebSocket | 已采纳 |
+| [ADR-003](003-celery-over-backgroundtasks.md) | 入库用 Celery 而非 BackgroundTasks | 已采纳 |
 
 ## 模板
 

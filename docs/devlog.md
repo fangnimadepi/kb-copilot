@@ -2,6 +2,29 @@
 
 > 每天记录：做了什么 / 踩了什么坑 / 做了什么决策。
 
+## 2026-07-12（Day 2 下半场 · 阶段 2 完成）
+
+**做了什么**
+- 文档入库流水线全链路：上传 API（202 + task_id）→ Celery 任务 → 解析（PDF/docx/md，PDF 表格重排为 Markdown、逐页保留页码）→ 分块（fixed / structured 双策略）→ bge-m3 批量向量化 → Milvus（HNSW/COSINE）+ chunk 元数据入 MySQL
+- 任务状态机：pending → parsing → embedding → done/failed/canceled，进度百分比按 embedding 批次推进；取消是协作式（批间检查点）；重试先清旧数据保证幂等
+- Milvus standalone 单容器部署（内嵌 etcd，见 infra/embedEtcd.yaml）
+- ADR-003：Celery vs BackgroundTasks
+
+**验收结果（手册阶段 2 标准）**
+- 批量上传 10 份年报 API 0.8s 返回，不阻塞 ✅
+- 杀掉 worker 再重启：在途任务经 acks_late 自动重投并完成，无人工干预 ✅
+- 失败任务错误信息明确（UnsupportedFormat: 不支持的格式: .xlsx）；取消/重试接口状态迁移正确 ✅
+- 数据一致性：单文档 MySQL 358 chunk = Milvus 358 向量，页码范围与 PDF 实际页数吻合 ✅
+
+**踩坑 / 决策**
+- PowerShell multipart 客户端把中文文件名编码成 RFC 2047（=?utf-8?B?...?=），内含 Windows 非法字符 `?`，落盘 OSError——教训：**服务端永远不能信任客户端文件名**，统一解码（email.header）+ 清洗非法字符 + 去路径分量防目录穿越
+- acks_late 崩溃重投的前提是任务幂等：任务开头先删同文档旧 chunk/向量再写入
+- Celery 取消没有安全的强杀手段，采用协作式取消：embedding 批间回查状态位；worker 侧读取消标记要 expire_all() 绕过 Session 缓存
+- Windows 下 Celery 只能 --pool=solo 单并发，生产部署（Docker/Linux）换 prefork
+
+**下一步（阶段 3：两阶段检索 + 引用溯源）**
+- Milvus top20 召回 → bge-reranker 精排 top5 → prompt 组装带 [n] 引用标注 → 低分拒答兜底
+
 ## 2026-07-12（Day 2 · 阶段 1 完成）
 
 **做了什么**
