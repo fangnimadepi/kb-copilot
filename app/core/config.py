@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     # 文档入库
     upload_dir: str = "data/uploads"
 
+    # 两阶段检索
+    recall_top_k: int = 20  # 向量召回条数（宽）
+    rerank_top_k: int = 5  # 精排保留条数（严）
+    rerank_score_threshold: float = 0.35  # 精排分低于此值的 chunk 丢弃；全部低于则拒答
+
     # Embedding / Rerank
     embedding_api_key: str = ""
     embedding_base_url: str = "https://api.siliconflow.cn/v1"

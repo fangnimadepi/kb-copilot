@@ -8,7 +8,7 @@ import logging
 import time
 
 import openai
-from openai import OpenAI
+from openai import AsyncOpenAI, OpenAI
 
 from app.core.config import settings
 
@@ -30,6 +30,19 @@ _client = OpenAI(
     timeout=60.0,
     max_retries=0,
 )
+
+# API 进程（async 上下文）用的异步客户端：单条查询向量化，走 SDK 自带重试即可
+_async_client = AsyncOpenAI(
+    api_key=settings.embedding_api_key,
+    base_url=settings.embedding_base_url,
+    timeout=30.0,
+    max_retries=2,
+)
+
+
+async def embed_query(text: str) -> list[float]:
+    resp = await _async_client.embeddings.create(model=settings.embedding_model, input=[text])
+    return resp.data[0].embedding
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
