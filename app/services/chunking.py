@@ -13,7 +13,13 @@ from dataclasses import dataclass
 from app.core.tokens import count_tokens
 from app.services.parsing import TextUnit
 
-_HEADING = re.compile(r"^(#{1,6} |第[一二三四五六七八九十百]+[章节] |\d{1,2}(\.\d{1,2}){0,3}\s+\S)")
+_HEADING = re.compile(
+    r"^(#{1,6} "  # markdown
+    r"|第[一二三四五六七八九十百]+[章节]\s"  # 第三节 管理层讨论与分析
+    r"|[一二三四五六七八九十]{1,3}、\S"  # 一、经营情况讨论
+    r"|（[一二三四五六七八九十]{1,3}）\S"  # （一）主营业务分析
+    r"|\d{1,2}(\.\d{1,2}){0,3}\s+\S)"  # 1.2.3 编号
+)
 
 
 @dataclass
@@ -69,7 +75,11 @@ def _fixed(units: list[TextUnit], chunk_size: int, overlap: int) -> list[ChunkDr
 
 def _structured(units: list[TextUnit], chunk_size: int, overlap: int) -> list[ChunkDraft]:
     """按标题聚合：遇到标题行开新节；节内容超过 chunk_size 时回落 fixed 切分，
-    并把节标题冠到每个子块开头（保住上下文语义）。"""
+    并把节标题冠到每个子块开头（保住上下文语义）。
+
+    PDF 的 unit 是整页文本，标题通常埋在页中间，所以先按行内标题把 unit
+    切开（_explode_at_headings），否则整本文档会被当成一个无标题大节。"""
+    units = _explode_at_headings(units)
     sections: list[tuple[str, list[TextUnit]]] = []
     title, current = "", []
     for u in units:
@@ -100,6 +110,24 @@ def _structured(units: list[TextUnit], chunk_size: int, overlap: int) -> list[Ch
                     sub.content = f"{title}\n{sub.content}"
                 chunks.append(sub)
     return _with_tokens([c for c in chunks if c.content.strip()])
+
+
+def _explode_at_headings(units: list[TextUnit]) -> list[TextUnit]:
+    """把每个 unit 按行内标题行切成多个 unit（页码继承），使节边界可被识别。
+    表格行（'| ' 开头）不参与标题判定，避免表格内容被误切。"""
+    out: list[TextUnit] = []
+    for u in units:
+        buf: list[str] = []
+        for line in u.text.splitlines():
+            stripped = line.strip()
+            if buf and not stripped.startswith("|") and _HEADING.match(stripped):
+                out.append(TextUnit(text="\n".join(buf), page=u.page))
+                buf = [line]
+            else:
+                buf.append(line)
+        if buf:
+            out.append(TextUnit(text="\n".join(buf), page=u.page))
+    return out
 
 
 def _page_at(boundaries: list[tuple[int, int]], offset: int) -> int:
