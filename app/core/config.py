@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     # 上下文窗口（token 预算，含历史消息；DeepSeek 上下文 64k，留足回答与余量）
     context_token_budget: int = 8000
 
+    # 文档入库
+    upload_dir: str = "data/uploads"
+
     # Embedding / Rerank
     embedding_api_key: str = ""
     embedding_base_url: str = "https://api.siliconflow.cn/v1"

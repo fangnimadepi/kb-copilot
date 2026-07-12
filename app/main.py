@@ -4,9 +4,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.chat import router as chat_router
+from app.api.documents import router as documents_router
 from app.core import middleware
 from app.core.config import settings
 from app.core.db import engine
+from app.models import ingest  # noqa: F401  确保入库相关表注册到 metadata
 from app.models.chat import Base
 
 logging.basicConfig(
@@ -27,6 +29,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="KB-Copilot", version="0.1.0", lifespan=lifespan)
 middleware.install(app)
 app.include_router(chat_router)
+app.include_router(documents_router)
 
 
 @app.get("/health")
