@@ -2,6 +2,30 @@
 
 > 每天记录：做了什么 / 踩了什么坑 / 做了什么决策。
 
+## 2026-07-12（Day 2 · 阶段 1 完成）
+
+**做了什么**
+- LLM 客户端封装（app/core/llm.py）：AsyncOpenAI 流式调用 + 超时 + 指数退避重试；重试边界设计为"只在首块响应前重试"——流已开始的失败无法安全回滚，通过 SSE error 事件告知客户端
+- /api/chat SSE 流式接口：事件协议 meta（回会话 id）→ delta（增量）→ done（落库确认）/ error
+- 会话与消息 MySQL 落库（SQLAlchemy 2.0 async + aiomysql），token_count 入库时预计算，裁剪时零编码开销
+- 上下文裁剪（services/context.py 纯函数）：从新往旧按 token 预算保留，system 始终保留、最新用户消息无条件保留；6 个单测覆盖边界
+- 统一错误响应 {"code", "message"} + 请求日志中间件（request_id + 耗时）——落实 Chatchat 静默失败的反面教训
+- ADR-002：SSE vs WebSocket 选型
+
+**验收结果（手册阶段 1 标准）**
+- curl 逐 token 流式输出 ✅
+- 同一会话连续 20 轮不崩（scripts/chat_smoke.py，累计 11680 token）✅
+- 裁剪正确触发：40 条 → 27 条，稳定卡在 8000 预算内 ✅
+
+**踩坑 / 决策**
+- 本机 3306 被系统 MySQL 服务占用 → 容器映射 3307
+- setuptools flat-layout 发现多个顶层目录（app/data/reference）拒绝构建 → pyproject 显式 packages.find include=["app*"]
+- Windows 控制台 GBK：Python 日志/输出里的中文在重定向文件里成乱码，查日志用 ASCII 关键字（logger 名）兜底；后续可设 PYTHONIOENCODING=utf-8
+- PowerShell 给 curl.exe 传 JSON 会被引号转义坑，改用 -d @file
+
+**下一步（阶段 2：异步入库流水线）**
+- 文档上传接口 → Celery 任务 → task_id；PDF/Word/Markdown 解析；两种分块策略；Milvus 写入；任务状态机
+
 ## 2026-07-08（Day 1）
 
 **做了什么**

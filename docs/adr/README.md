@@ -7,6 +7,7 @@
 | 编号 | 决策 | 状态 |
 |---|---|---|
 | [ADR-001](001-handwritten-rag-chain.md) | 手写 RAG 链路而非全用 LangChain | 已采纳 |
+| [ADR-002](002-sse-over-websocket.md) | 流式输出用 SSE 而非 WebSocket | 已采纳 |
 
 ## 模板
 
