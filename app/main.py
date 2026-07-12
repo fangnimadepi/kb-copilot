@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from app.api.chat import router as chat_router
 from app.api.documents import router as documents_router
+from app.api.kb_chat import router as kb_chat_router
 from app.core import middleware
 from app.core.config import settings
 from app.core.db import engine
@@ -30,6 +31,7 @@ app = FastAPI(title="KB-Copilot", version="0.1.0", lifespan=lifespan)
 middleware.install(app)
 app.include_router(chat_router)
 app.include_router(documents_router)
+app.include_router(kb_chat_router)
 
 
 @app.get("/health")
