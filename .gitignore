@@ -23,6 +23,9 @@ venv/
 # --- 第三方参考源码（仅本地精读） ---
 reference/
 
+# --- 部署密钥（绝不入库） ---
+.deploy/
+
 # --- 数据与模型 ---
 data/uploads/
 data/corpus/

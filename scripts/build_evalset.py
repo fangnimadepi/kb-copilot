@@ -36,7 +36,10 @@ GEN_PROMPT = """你是投研评测集构建专家。基于下面这段来自《{
 {content}"""
 
 client = AsyncOpenAI(
-    api_key=settings.deepseek_api_key, base_url=settings.deepseek_base_url, timeout=60, max_retries=2
+    api_key=settings.deepseek_api_key,
+    base_url=settings.deepseek_base_url,
+    timeout=60,
+    max_retries=2,
 )
 sem = asyncio.Semaphore(8)
 
@@ -119,7 +122,9 @@ async def main() -> None:
     with out.open("w", encoding="utf-8") as f:
         for row in qa:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    n_table = sum(1 for r in qa if "表" in r["question"] or any(ch.isdigit() for ch in r["ground_truth"]))
+    n_table = sum(
+        1 for r in qa if "表" in r["question"] or any(ch.isdigit() for ch in r["ground_truth"])
+    )
     print(f"wrote {len(qa)} QA pairs -> {out}（含数字/表格类约 {n_table} 条）")
     print("注意：按手册要求需人工抽查修正约 30%")
 

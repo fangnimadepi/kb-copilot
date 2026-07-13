@@ -39,9 +39,7 @@ async def run_one(row: dict, args: argparse.Namespace) -> dict:
         if not chunks:
             answer = REFUSAL
         else:
-            prompt = RAG_PROMPT.format(
-                context=_build_context(chunks), question=row["question"]
-            )
+            prompt = RAG_PROMPT.format(context=_build_context(chunks), question=row["question"])
             parts = [
                 d async for d in stream_chat([{"role": "user", "content": prompt}], temperature=0.3)
             ]
@@ -68,7 +66,9 @@ async def main() -> None:
     p.add_argument("--limit", type=int, default=0)
     args = p.parse_args()
 
-    rows = [json.loads(line) for line in Path(args.evalset).read_text(encoding="utf-8").splitlines()]
+    rows = [
+        json.loads(line) for line in Path(args.evalset).read_text(encoding="utf-8").splitlines()
+    ]
     if args.limit:
         rows = rows[: args.limit]
     print(f"[{args.name}] {len(rows)} questions ...")

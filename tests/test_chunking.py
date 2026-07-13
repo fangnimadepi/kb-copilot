@@ -49,7 +49,10 @@ def test_token_count_populated():
 def test_structured_detects_heading_inside_unit():
     # PDF 的 unit 是整页：标题埋在页中间也必须被识别为节边界
     page = TextUnit(
-        text="页眉：贵州茅台年度报告\n" + "前言内容。" * 10 + "\n第三节 管理层讨论与分析\n" + "经营分析内容。" * 10,
+        text="页眉：贵州茅台年度报告\n"
+        + "前言内容。" * 10
+        + "\n第三节 管理层讨论与分析\n"
+        + "经营分析内容。" * 10,
         page=5,
     )
     chunks = split_units([page], strategy="structured", chunk_size=5000, overlap=0)
