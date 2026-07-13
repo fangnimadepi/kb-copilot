@@ -6,27 +6,7 @@
 
 ## 架构
 
-```mermaid
-flowchart LR
-    subgraph Ingestion[文档入库流水线（异步）]
-        U[文档上传] --> Q[Celery + Redis 任务队列]
-        Q --> P[解析 PDF/Word/Markdown]
-        P --> C[分块（可配置策略）]
-        C --> E[bge-m3 向量化]
-        E --> M[(Milvus)]
-        P --> DB[(MySQL 元数据)]
-    end
-
-    subgraph Query[问答链路]
-        USER[用户提问] --> R1[向量召回 top20]
-        M --> R1
-        R1 --> R2[bge-reranker 重排 top5]
-        R2 --> LLM[DeepSeek · Prompt 组装 + 引用标注]
-        LLM --> SSE[SSE 流式输出 + 来源定位]
-    end
-```
-
-*（架构图将随开发进度细化）*
+![架构图](docs/assets/architecture.png)
 
 ## 技术栈
 
