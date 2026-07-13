@@ -65,7 +65,22 @@ flowchart LR
 
 ## 快速开始
 
-*（M5 完成后填入：docker compose up 一键启动指引）*
+```bash
+git clone https://github.com/fangnimadepi/kb-copilot.git && cd kb-copilot
+cp .env.example .env       # 填入 DeepSeek / 硅基流动 API key，设置 ACCESS_PASSWORD
+docker compose --profile app up -d --build   # 一键起全家桶：api + worker + mysql + redis + milvus
+```
+
+启动后打开 `http://localhost:8000`——输入访问口令即可对话；上传文档走 `POST /api/documents`（接口文档见 `/docs`）。
+
+本地开发模式（基础设施进容器、Python 本地跑）：
+
+```bash
+docker compose up -d mysql redis milvus
+uv venv && uv pip install -e ".[dev]"
+python -m uvicorn app.main:app --port 8000
+python -m celery -A app.tasks.celery_app worker --pool=solo -l INFO   # Windows 需 solo pool
+```
 
 ## 技术决策记录（ADR）
 

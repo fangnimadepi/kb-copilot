@@ -1,7 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.chat import router as chat_router
 from app.api.documents import router as documents_router
@@ -37,3 +39,9 @@ app.include_router(kb_chat_router)
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok", "app": settings.app_name}
+
+
+# 演示页面（放在最后挂载，避免吞掉 /api /health 路由）
+_static = Path(__file__).resolve().parent.parent / "static"
+if _static.is_dir():
+    app.mount("/", StaticFiles(directory=_static, html=True), name="static")

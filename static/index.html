@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KB-Copilot · 贵州茅台投研知识库</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --line:#e5e7eb; --text:#111827; --muted:#6b7280; --accent:#2563eb; }
+  * { box-sizing:border-box; margin:0; }
+  body { font:15px/1.7 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); }
+  .wrap { max-width:820px; margin:0 auto; padding:16px; display:flex; flex-direction:column; height:100dvh; }
+  header { display:flex; justify-content:space-between; align-items:center; padding-bottom:12px; }
+  header h1 { font-size:18px; }
+  header input { width:150px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px; }
+  #log { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; padding:4px 0; }
+  .msg { max-width:92%; padding:10px 14px; border-radius:12px; white-space:pre-wrap; word-break:break-word; }
+  .user { align-self:flex-end; background:var(--accent); color:#fff; }
+  .bot  { align-self:flex-start; background:var(--card); border:1px solid var(--line); }
+  .refs { align-self:flex-start; font-size:12px; color:var(--muted); background:var(--card); border:1px dashed var(--line); border-radius:10px; padding:8px 12px; }
+  .refs b { color:var(--text); }
+  form { display:flex; gap:8px; padding-top:12px; }
+  form input { flex:1; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font-size:15px; }
+  form button { padding:0 22px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; cursor:pointer; }
+  form button:disabled { opacity:.5; }
+  .hint { font-size:12px; color:var(--muted); text-align:center; padding:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>KB-Copilot <span style="font-size:12px;color:var(--muted)">贵州茅台年报知识库（2020–2025）</span></h1>
+    <input id="token" type="password" placeholder="访问口令" title="访问口令">
+  </header>
+  <div id="log">
+    <div class="msg bot">你好，我是投研知识库助手。可以问我贵州茅台 2020–2025 年年报/半年报里的任何问题，例如："2024 年营业收入是多少？"、"对比 2023 和 2024 年的毛利率"。回答会标注来源文件与页码。</div>
+  </div>
+  <form id="form">
+    <input id="q" placeholder="输入问题…" autocomplete="off">
+    <button id="send" type="submit">发送</button>
+  </form>
+  <div class="hint">回答仅基于知识库检索内容生成，检索不到会明确拒答 · KB-Copilot demo</div>
+</div>
+<script>
+const log = document.getElementById("log");
+const form = document.getElementById("form");
+const qInput = document.getElementById("q");
+const sendBtn = document.getElementById("send");
+const tokenInput = document.getElementById("token");
+tokenInput.value = localStorage.getItem("kb_token") || "";
+tokenInput.addEventListener("change", () => localStorage.setItem("kb_token", tokenInput.value));
+
+let conversationId = null;
+
+function add(cls, text) {
+  const div = document.createElement("div");
+  div.className = "msg " + cls;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  return div;
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const question = qInput.value.trim();
+  if (!question) return;
+  qInput.value = "";
+  sendBtn.disabled = true;
+  add("user", question);
+  const bot = add("bot", "…");
+
+  try {
+    const resp = await fetch("/api/kb_chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Access-Token": tokenInput.value },
+      body: JSON.stringify({ message: question, conversation_id: conversationId }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      bot.textContent = "请求失败：" + (err.message || resp.status);
+      return;
+    }
+    bot.textContent = "";
+    let refs = [];
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "", event = null;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split("\n");
+      buf = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) {
+          const data = JSON.parse(line.slice(5).trim());
+          if (event === "meta") conversationId = data.conversation_id;
+          else if (event === "refs") refs = data;
+          else if (event === "delta") { bot.textContent += data.content; log.scrollTop = log.scrollHeight; }
+          else if (event === "error") bot.textContent += "\n[" + data.message + "]";
+        }
+      }
+    }
+    if (refs.length) {
+      const div = document.createElement("div");
+      div.className = "refs";
+      div.innerHTML = "<b>来源</b><br>" + refs.map(r =>
+        `[${r.ref}] ${r.filename} 第${r.page_start === r.page_end ? r.page_start : r.page_start + "-" + r.page_end}页（相关度 ${r.rerank_score}）`
+      ).join("<br>");
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+    }
+  } catch (err) {
+    bot.textContent = "网络错误：" + err.message;
+  } finally {
+    sendBtn.disabled = false;
+    qInput.focus();
+  }
+});
+</script>
+</body>
+</html>

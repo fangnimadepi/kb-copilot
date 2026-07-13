@@ -1,5 +1,51 @@
-# 基础设施（开发期先起 mysql/redis/milvus；api/worker 服务在 M5 阶段补全）
+# 一键全家桶：docker compose --profile app up -d
+# 本地开发只起基础设施：docker compose up -d mysql redis milvus
 services:
+  api:
+    build: .
+    profiles: ["app"]
+    env_file: .env
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      REDIS_URL: redis://redis:6379/0
+      MILVUS_URI: http://milvus:19530
+      PYTHONIOENCODING: utf-8
+    ports:
+      - "8000:8000"
+    volumes:
+      - upload_data:/srv/kb-copilot/data/uploads
+    depends_on:
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_started
+      milvus:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build: .
+    profiles: ["app"]
+    command: ["python", "-m", "celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=INFO", "--concurrency=2"]
+    env_file: .env
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      REDIS_URL: redis://redis:6379/0
+      MILVUS_URI: http://milvus:19530
+      PYTHONIOENCODING: utf-8
+    volumes:
+      - upload_data:/srv/kb-copilot/data/uploads
+    depends_on:
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_started
+      milvus:
+        condition: service_healthy
+    restart: unless-stopped
+
   mysql:
     image: mysql:8.0
     environment:
@@ -46,3 +92,4 @@ services:
 volumes:
   mysql_data:
   milvus_data:
+  upload_data:

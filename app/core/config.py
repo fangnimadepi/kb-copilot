@@ -6,6 +6,9 @@ class Settings(BaseSettings):
 
     app_name: str = "kb-copilot"
 
+    # 公网 demo 的访问口令（留空 = 不校验，本地开发用）；请求需带 X-Access-Token 头
+    access_password: str = ""
+
     # LLM
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"

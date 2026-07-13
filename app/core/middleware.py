@@ -4,6 +4,7 @@
 这是从 Chatchat 学到的反面教训：它的异常直接崩成非 JSON，前端只能静默失败。
 """
 
+import hmac
 import logging
 import time
 import uuid
@@ -12,12 +13,30 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.core.config import settings
 from app.services.chat_service import ConversationNotFound
 
 logger = logging.getLogger("app.request")
 
 
 def install(app: FastAPI) -> None:
+    @app.middleware("http")
+    async def access_guard(request: Request, call_next):
+        """公网 demo 的简易口令：ACCESS_PASSWORD 配置后，/api/* 需带 X-Access-Token。
+        demo 定位的轻量方案；正式多用户场景应替换为 JWT。"""
+        if (
+            settings.access_password
+            and request.url.path.startswith("/api")
+            and not hmac.compare_digest(
+                request.headers.get("X-Access-Token", ""), settings.access_password
+            )
+        ):
+            return JSONResponse(
+                status_code=401,
+                content={"code": "unauthorized", "message": "访问口令错误或未提供"},
+            )
+        return await call_next(request)
+
     @app.middleware("http")
     async def request_logging(request: Request, call_next):
         request_id = uuid.uuid4().hex[:8]
