@@ -12,7 +12,7 @@ services:
       QDRANT_URL: http://qdrant:6333
       PYTHONIOENCODING: utf-8
     ports:
-      - "8000:8000"
+      - "80:8000"  # 服务器安全组只放行 80/443/22，直接用 80 对外
     volumes:
       - upload_data:/srv/kb-copilot/data/uploads
     depends_on: [mysql, redis, qdrant]
