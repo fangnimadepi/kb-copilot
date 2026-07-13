@@ -2,6 +2,21 @@
 
 > 每天记录：做了什么 / 踩了什么坑 / 做了什么决策。
 
+## 2026-07-13（Day 3 · 阶段 5 完成，项目一交付）
+
+**做了什么**
+- Docker 全家桶（api/worker profile 共用镜像）+ 演示页面（原生 JS SSE 客户端，来源引用展示）+ ACCESS_PASSWORD 中间件（hmac 恒时比较）+ GitHub Actions CI + README 快速启动
+- **向量库 Milvus/Qdrant 双后端**（工厂模式，模块级函数对调用方零改动）：演示服务器 1C/1G 跑不动 Milvus（空载 >1GB），Qdrant 仅 ~150MB。本地 Milvus / 服务器 Qdrant，一个环境变量切换
+- 部署：SiliCloud 洛杉矶 1C1G（2G swap 兜底），docker-compose.server.yml（MySQL 瘦身参数），语料经 SSH 隧道灌入，公网 http://154.19.184.225:3389 国内直连实测 health 430ms、RAG 问答含冷启动 ~13s（热路径 ~3s）
+
+**踩坑**
+- 服务器公网 IP 是 1:1 NAT（网卡上只有内网地址），可达性由控制台安全组决定：默认只放行 80/443/22/3389；80/443 被机器上既有 Caddy 占用 → 借用空闲的 3389 对外（Chrome unsafe port 名单不含 3389）
+- 本机代理会劫持对服务器的请求（503），测试要 -NoProxy / 加白名单
+- **CI 红灯排查**：ruff format check 失败但本地全绿——本地有"提交后被格式化未再提交"的文件，CI 检查的是提交快照而非工作区。教训：commit 前跑检查，或者把 format 放进 pre-commit
+- PowerShell 客户端中文文件名走 RFC 2047 编码含 `?`，服务端文件名必须解码+清洗（此前已修，部署验证生效）
+
+**项目一收官**：阶段 0~5 全部完成，验收全过。剩余可选项：域名 + HTTPS（Caddy 反代已有现成容器可挂）、语料扩展同行对比
+
 ## 2026-07-12（Day 2 · 阶段 4 完成）★ 全项目最值钱的一天
 
 **做了什么**
