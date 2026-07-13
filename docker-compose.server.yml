@@ -1,0 +1,65 @@
+# 低配服务器（1C/1G）部署版：向量库用 Qdrant（~150MB）替代 Milvus（>1GB）
+# 用法：docker compose -f docker-compose.server.yml up -d --build
+services:
+  api:
+    build: .
+    env_file: .env
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      REDIS_URL: redis://redis:6379/0
+      VECTOR_BACKEND: qdrant
+      QDRANT_URL: http://qdrant:6333
+      PYTHONIOENCODING: utf-8
+    ports:
+      - "8000:8000"
+    volumes:
+      - upload_data:/srv/kb-copilot/data/uploads
+    depends_on: [mysql, redis, qdrant]
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: ["python", "-m", "celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=INFO", "--concurrency=1"]
+    env_file: .env
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      REDIS_URL: redis://redis:6379/0
+      VECTOR_BACKEND: qdrant
+      QDRANT_URL: http://qdrant:6333
+      PYTHONIOENCODING: utf-8
+    volumes:
+      - upload_data:/srv/kb-copilot/data/uploads
+    depends_on: [mysql, redis, qdrant]
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: kb_copilot
+      MYSQL_USER: kbcopilot
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    # 1G 内存机器上的瘦身参数
+    command: >-
+      --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      --performance-schema=OFF --innodb-buffer-pool-size=64M --max-connections=50
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  qdrant_data:
+  upload_data:

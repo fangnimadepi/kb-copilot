@@ -41,9 +41,11 @@ class Settings(BaseSettings):
     mysql_password: str = ""
     mysql_database: str = "kb_copilot"
 
-    # Redis / Milvus
+    # Redis / 向量库
     redis_url: str = "redis://127.0.0.1:6379/0"
+    vector_backend: str = "milvus"  # milvus / qdrant（低配服务器用 qdrant，~150MB 内存）
     milvus_uri: str = "http://127.0.0.1:19530"
+    qdrant_url: str = "http://127.0.0.1:6333"
 
     @property
     def mysql_dsn(self) -> str:
