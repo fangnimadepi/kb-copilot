@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RetrievedChunk:
     chunk_id: int
+    document_id: str
     content: str
     filename: str
     page_start: int
@@ -95,6 +96,7 @@ async def retrieve(
 def _to_result(hit: dict, chunk: Chunk, filename: str, rerank_score: float) -> RetrievedChunk:
     return RetrievedChunk(
         chunk_id=chunk.id,
+        document_id=chunk.document_id,
         content=chunk.content,
         filename=filename,
         page_start=chunk.page_start,

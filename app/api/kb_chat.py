@@ -53,6 +53,7 @@ def _refs_payload(chunks: list[RetrievedChunk]) -> list[dict]:
     return [
         {
             "ref": i,
+            "document_id": c.document_id,
             "filename": c.filename,
             "page_start": c.page_start,
             "page_end": c.page_end,

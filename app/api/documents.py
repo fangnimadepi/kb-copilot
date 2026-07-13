@@ -4,6 +4,7 @@ from email.header import decode_header, make_header
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -116,6 +117,15 @@ async def retry_task(task_id: str, db: AsyncSession = Depends(get_db)) -> dict:
     await db.commit()
     ingest_document.delay(task.id)
     return {"task_id": task.id, "status": task.status, "retry_count": task.retry_count}
+
+
+@router.get("/documents/{document_id}/file")
+async def download_document(document_id: str, db: AsyncSession = Depends(get_db)) -> FileResponse:
+    """下载原始文档——供演示时核对引用真实性（回答页码 vs 原文）。"""
+    doc = await db.get(Document, document_id)
+    if doc is None or not Path(doc.file_path).is_file():
+        raise HTTPException(404, detail="文档不存在")
+    return FileResponse(doc.file_path, filename=doc.filename, media_type="application/pdf")
 
 
 @router.get("/documents")
