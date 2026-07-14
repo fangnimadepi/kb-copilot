@@ -37,6 +37,29 @@ class KbChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=8000)
 
 
+class SearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=2000)
+    top_k: int = Field(default=5, ge=1, le=20)
+
+
+@router.post("/search")
+async def search(req: SearchRequest, db: AsyncSession = Depends(get_db)) -> dict:
+    """纯检索接口（两阶段检索，不走 LLM）——供 MCP kb-search server 等外部系统复用。"""
+    chunks = await retrieve(req.query, db, final_top_k=req.top_k)
+    return {
+        "results": [
+            {
+                "content": c.content,
+                "filename": c.filename,
+                "page_start": c.page_start,
+                "page_end": c.page_end,
+                "rerank_score": round(c.rerank_score, 4),
+            }
+            for c in chunks
+        ]
+    }
+
+
 def _build_context(chunks: list[RetrievedChunk]) -> str:
     blocks = []
     for i, c in enumerate(chunks, start=1):
