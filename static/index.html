@@ -32,9 +32,22 @@
   form { display:flex; gap:8px; padding-top:8px; }
   form input { flex:1; padding:12px 14px; border:1px solid var(--line); border-radius:10px; font-size:15px; }
   form button { padding:0 22px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; cursor:pointer; }
-  form button:disabled { opacity:.5; }
+  form button:disabled { opacity:.5; cursor:not-allowed; }
+  form input:disabled { background:#f2f3f5; }
   .hint { font-size:11px; color:var(--muted); text-align:center; padding:6px 0 2px; }
   .hint a { color:var(--muted); }
+  /* 等待动画：三个跳动的点 + 阶段文案 */
+  .thinking { display:inline-flex; align-items:center; gap:8px; color:var(--muted); }
+  .dots { display:inline-flex; gap:4px; }
+  .dots span { width:6px; height:6px; border-radius:50%; background:var(--accent); opacity:.4; animation:blink 1.2s infinite both; }
+  .dots span:nth-child(2){ animation-delay:.2s; } .dots span:nth-child(3){ animation-delay:.4s; }
+  @keyframes blink { 0%,80%,100%{ opacity:.25; transform:scale(.8);} 40%{ opacity:1; transform:scale(1);} }
+  /* 流式输出时的打字光标 */
+  .caret::after { content:"▋"; color:var(--accent); animation:caret 1s step-end infinite; }
+  @keyframes caret { 50%{ opacity:0; } }
+  .agent-note { align-self:center; max-width:96%; background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px 16px; font-size:13px; color:#7c2d12; line-height:1.7; }
+  .agent-note a { color:var(--accent); font-weight:600; }
+  .agent-note b { color:#9a3412; }
 </style>
 </head>
 <body>
@@ -43,13 +56,13 @@
     <h1>KB-Copilot <small>贵州茅台年报知识库（2020–2025）</small></h1>
     <nav>
       <span class="pill active">知识库问答</span>
-      <span class="pill disabled" title="项目二：MCP + LangGraph 智能客服 Agent，开发中">Agent 助手 🚧</span>
+      <span class="pill" id="agentTab" style="cursor:pointer">Agent 助手 🚧</span>
       <a class="pill" href="https://github.com/fangnimadepi/kb-copilot" target="_blank">GitHub ↗</a>
       <input id="token" type="password" placeholder="访问口令" title="访问口令">
     </nav>
   </header>
   <div id="log">
-    <div class="msg bot">你好，我是投研知识库助手。可以问我贵州茅台 2020–2025 年年报/半年报里的任何问题，回答会标注来源文件与页码，原始 PDF 可直接下载核对。试试下面的示例问题👇</div>
+    <div class="msg bot">你好，我是投研知识库助手。可以问我贵州茅台 2020–2025 年年报/半年报里的任何问题，回答会标注来源文件与页码，原始 PDF 可直接下载核对。<br>💡 首次使用请先在右上角输入<b>访问口令</b>；试试下面的示例问题👇</div>
   </div>
   <div id="chips">
     <span class="chip">2024年营业总收入是多少？</span>
@@ -59,7 +72,7 @@
     <span class="chip">五粮液2024年的营收是多少？（库外拒答演示）</span>
   </div>
   <form id="form">
-    <input id="q" placeholder="输入问题…" autocomplete="off">
+    <input id="q" placeholder="输入问题，回车发送…" autocomplete="off" autofocus>
     <button id="send" type="submit">发送</button>
   </form>
   <div class="hint">
@@ -147,8 +160,13 @@ form.addEventListener("submit", async (e) => {
   if (!question) return;
   qInput.value = "";
   sendBtn.disabled = true;
+  qInput.disabled = true;
   add("user", question);
-  const bot = add("bot", "…");
+
+  // 等待动画：跳动点 + 阶段文案，避免"卡住"错觉
+  const bot = add("bot", "");
+  bot.innerHTML = '<span class="thinking"><span class="dots"><span></span><span></span><span></span></span>正在检索知识库…</span>';
+  let streaming = false;
 
   try {
     const resp = await fetch("/api/kb_chat", {
@@ -158,10 +176,11 @@ form.addEventListener("submit", async (e) => {
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
-      bot.textContent = "请求失败：" + (err.message || resp.status);
+      bot.textContent = resp.status === 401
+        ? "🔒 请先在右上角输入访问口令再提问。"
+        : "请求失败：" + (err.message || resp.status);
       return;
     }
-    bot.textContent = "";
     let refs = [];
     const reader = resp.body.getReader();
     const decoder = new TextDecoder();
@@ -178,18 +197,39 @@ form.addEventListener("submit", async (e) => {
           const data = JSON.parse(line.slice(5).trim());
           if (event === "meta") conversationId = data.conversation_id;
           else if (event === "refs") refs = data;
-          else if (event === "delta") { bot.textContent += data.content; log.scrollTop = log.scrollHeight; }
-          else if (event === "error") bot.textContent += "\n[" + data.message + "]";
+          else if (event === "delta") {
+            if (!streaming) { streaming = true; bot.textContent = ""; bot.classList.add("caret"); }
+            bot.textContent += data.content;
+            log.scrollTop = log.scrollHeight;
+          }
+          else if (event === "error") { if (!streaming) bot.textContent = ""; bot.textContent += "\n[" + data.message + "]"; }
         }
       }
     }
+    bot.classList.remove("caret");
     renderRefs(refs);
   } catch (err) {
     bot.textContent = "网络错误：" + err.message;
   } finally {
+    bot.classList.remove("caret");
     sendBtn.disabled = false;
+    qInput.disabled = false;
     qInput.focus();
   }
+});
+
+// Agent 助手：暂不演示，弹说明 + GitHub 链接
+document.getElementById("agentTab").addEventListener("click", () => {
+  if (document.getElementById("agentNote")) { document.getElementById("agentNote").scrollIntoView({behavior:"smooth"}); return; }
+  const div = document.createElement("div");
+  div.className = "agent-note";
+  div.id = "agentNote";
+  div.innerHTML = '🚧 <b>Agent 助手（项目二 · 企业工单智能运维 Agent）暂未在线演示</b><br>' +
+    '当前演示服务器仅 1 核 1G，且同时承载本知识库服务，配置不足以再跑多步 Agent（LangGraph 编排 + 向量记忆 + 审批工作流）。后续升级服务器后再上线。<br>' +
+    '项目已完成并开源，含 MCP 工具、<b>人在回路审批</b>、Text2SQL 工单分析、跨会话记忆，30 条多步任务评测<b>完成率 97%</b>：<br>' +
+    '👉 <a href="https://github.com/fangnimadepi/kb-agent" target="_blank">github.com/fangnimadepi/kb-agent</a>';
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
 });
 </script>
 </body>
